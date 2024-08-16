@@ -43,6 +43,19 @@ func (ctx *Ctx) AppStore() (*value, error) {
 	return app.Store, nil
 }
 
+func (c *Ctx) BasicAuth() (string, string, bool) {
+	r, ok := c.Values.Get("request")
+	if !ok {
+		return "", "", false
+	}
+	request, ok := r.(*http.Request)
+	if !ok {
+		return "", "", false
+	}
+
+	return request.BasicAuth()
+}
+
 func (ctx *Ctx) BodyParser(out interface{}) error {
 	// c.RLock()
 	// defer c.RUnlock()
