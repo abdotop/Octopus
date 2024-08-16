@@ -65,7 +65,7 @@ func (r *route) Get(path string, handlers ...HandlerFunc) {
 
 func (r *route) DELETE(path string, handlers ...HandlerFunc) {
 	handlers = append(r.globalMiddleware, handlers...)
-	r.a.Post(r.path+path, handlers...)
+	r.a.DELETE(r.path+path, handlers...)
 }
 
 func (r *route) PUT(path string, handlers ...HandlerFunc) {
