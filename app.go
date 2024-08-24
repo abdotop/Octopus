@@ -132,7 +132,7 @@ func (a *App) handleError(code StatusCode, c *Ctx) {
 		handler(c)
 	} else {
 		func(c *Ctx) {
-			message := statusMessages[code]
+			message := StatusMessages[code]
 			if code == StatusNotFound {
 				c.WriteString(string(message))
 			}

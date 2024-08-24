@@ -68,7 +68,7 @@ const (
 	StatusNetworkAuthenticationRequired StatusCode = 511
 )
 
-var statusMessages = map[StatusCode]codeMessage{
+var StatusMessages = map[StatusCode]codeMessage{
 	StatusContinue:                      "Continue",
 	StatusSwitchingProtocols:            "Switching Protocols",
 	StatusProcessing:                    "Processing",
