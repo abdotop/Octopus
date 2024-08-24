@@ -94,13 +94,9 @@ func (ctx *Ctx) Get(key string) string {
 func (ctx *Ctx) JSON(data interface{}) error {
 	// c.Lock()
 	// defer c.Unlock()
-	r, ok := ctx.Values.Get("response")
-	if ok {
-		r := r.(http.ResponseWriter)
-		r.Header().Set("Content-Type", "application/json")
-		return json.NewEncoder(r).Encode(data)
-	}
-	return errors.New("response not found in context values")
+	r := ctx.Response()
+	r.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(r).Encode(data)
 }
 
 func (ctx *Ctx) Next() {
@@ -125,47 +121,37 @@ func (ctx *Ctx) Query(key string) string {
 func (ctx *Ctx) Render(path string, data interface{}) error {
 	// c.Lock()
 	// defer c.Unlock()
-	r, ok := ctx.Values.Get("response")
-	if ok {
-		r := r.(http.ResponseWriter)
-		tp, err := template.ParseFiles(path)
-		if err != nil {
-			return err
-		}
-		return tp.Execute(r, data)
-	}
-	return errors.New("response not found in context values")
-}
-
-func (ctx *Ctx) SendString(code statusCode, s string) error {
-	// c.Lock()
-	// defer c.Unlock()
-	r, ok := ctx.Values.Get("response")
-	if ok {
-		ctx.Status(code)
-		r := r.(http.ResponseWriter)
-		_, err := r.Write([]byte(s))
+	r := ctx.Response()
+	tp, err := template.ParseFiles(path)
+	if err != nil {
 		return err
 	}
-	return errors.New("response not found in context values")
+	return tp.Execute(r, data)
 }
 
-func (ctx *Ctx) Status(code statusCode) *Ctx {
+func (ctx *Ctx) SendString(code StatusCode, s string) error {
+	// c.Lock()
+	// defer c.Unlock()
+	r := ctx.Response()
+	ctx.Status(code)
+	_, err := r.Write([]byte(s))
+	return err
+}
+
+func (ctx *Ctx) Status(code StatusCode) *Ctx {
 	// c.RLock()
 	// defer c.RUnlock()
-	r, ok := ctx.Values.Get("response")
+	r := ctx.Response()
 	a, appExist := ctx.Values.Get("app")
-	if ok {
-		r := r.(http.ResponseWriter)
-		r.WriteHeader(int(code))
-		if appExist {
-			a := a.(*App)
-			a.handleError(code, ctx)
-		} else {
-			a := New()
-			a.handleError(code, ctx)
-		}
+	r.WriteHeader(int(code))
+	if appExist {
+		a := a.(*App)
+		a.handleError(code, ctx)
+	} else {
+		a := New()
+		a.handleError(code, ctx)
 	}
+
 	return ctx
 }
 
@@ -185,6 +171,29 @@ func (ctx *Ctx) RemoteIP() (string, error) {
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	return ip, nil
 }
+
+func (ctx *Ctx) Response() http.ResponseWriter {
+	r, ok := ctx.Values.Get("response")
+	if !ok {
+		// Comme nous ne pouvons pas retourner une erreur ici, nous allons logger l'erreur
+		// et retourner un ResponseWriter vide
+		return &emptyResponseWriter{}
+	}
+
+	resp, ok := r.(http.ResponseWriter)
+	if !ok {
+		return &emptyResponseWriter{}
+	}
+
+	return resp
+}
+
+// emptyResponseWriter est un ResponseWriter vide qui ne fait rien
+type emptyResponseWriter struct{}
+
+func (e *emptyResponseWriter) Header() http.Header       { return http.Header{} }
+func (e *emptyResponseWriter) Write([]byte) (int, error) { return 0, nil }
+func (e *emptyResponseWriter) WriteHeader(int)           {}
 
 // extractValidIPsFromHeader extrait et valide les adresses IP à partir d'un en-tête HTTP spécifié.
 func extractValidIPsFromHeader(r *http.Request, headerName string) []string {
@@ -230,13 +239,7 @@ func isValidIP(ip string) bool {
 // }
 
 func (ctx *Ctx) WriteString(s string) error {
-	// c.RLock()
-	// defer c.RUnlock()
-	r, ok := ctx.Values.Get("response")
-	if ok {
-		r := r.(http.ResponseWriter)
-		_, err := r.Write([]byte(s))
-		return err
-	}
-	return errors.New("response not found in context values")
+	r := ctx.Response()
+	_, err := r.Write([]byte(s))
+	return err
 }

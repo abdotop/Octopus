@@ -19,7 +19,7 @@ type App struct {
 
 	globalMiddleware []HandlerFunc
 	subApps          []*route
-	errorHandlers    map[statusCode]HandlerFunc
+	errorHandlers    map[StatusCode]HandlerFunc
 	Store            *value
 }
 
@@ -27,7 +27,7 @@ func New() *App {
 	return &App{
 		subApps:          make([]*route, 0),
 		routes:           new(routes),
-		errorHandlers:    make(map[statusCode]HandlerFunc),
+		errorHandlers:    make(map[StatusCode]HandlerFunc),
 		w:                sync.WaitGroup{},
 		globalMiddleware: make([]HandlerFunc, 0),
 		Store:            new(value),
@@ -118,13 +118,13 @@ func (a *App) Method(method string, path string, handler ...HandlerFunc) {
 	a.handle(path, handler, methods...)
 }
 
-func (a *App) OnErrorCode(code statusCode, f HandlerFunc) {
+func (a *App) OnErrorCode(code StatusCode, f HandlerFunc) {
 	a.Lock()
 	defer a.Unlock()
 	a.errorHandlers[code] = f
 }
 
-func (a *App) handleError(code statusCode, c *Ctx) {
+func (a *App) handleError(code StatusCode, c *Ctx) {
 	a.RLock()
 	handler, exists := a.errorHandlers[code]
 	a.RUnlock()
