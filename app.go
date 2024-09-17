@@ -158,7 +158,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					routExist = true
 					return false
 				} else {
-					c.Status(StatusMethodNotAllowed)
+					c.SendStatus(StatusMethodNotAllowed)
 					routExist = true
 					return false
 				}
@@ -171,7 +171,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					routExist = true
 					return false
 				} else {
-					c.Status(StatusMethodNotAllowed)
+					c.SendStatus(StatusMethodNotAllowed)
 					routExist = true
 					return false
 				}
@@ -181,7 +181,7 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if !routExist {
-		c.Status(StatusNotFound)
+		c.SendStatus(StatusNotFound)
 	}
 }
 

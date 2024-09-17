@@ -21,12 +21,12 @@ func NewMiddleware(mh *stdlib.Middleware) octopus.HandlerFunc {
 		// Retrieve the HTTP request from the Octopus context
 		r, ok := c.Values.Get("request")
 		if !ok {
-			c.Status(octopus.StatusInternalServerError)
+			c.SendStatus(octopus.StatusInternalServerError)
 			return
 		}
 		request, ok := r.(*http.Request)
 		if !ok {
-			c.Status(octopus.StatusInternalServerError)
+			c.SendStatus(octopus.StatusInternalServerError)
 			return
 		}
 

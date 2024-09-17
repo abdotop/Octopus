@@ -13,10 +13,11 @@ import (
 
 type Ctx struct {
 	// sync.RWMutex
-	handlers []HandlerFunc
-	index    int
-	Values   *value
-	Context  context.Context
+	handlers   []HandlerFunc
+	index      int
+	Values     *value
+	Context    context.Context
+	statusCode StatusCode
 	// sse      *sse
 }
 
@@ -92,9 +93,10 @@ func (ctx *Ctx) Get(key string) string {
 // }
 
 func (ctx *Ctx) JSON(data interface{}) error {
-	// c.Lock()
-	// defer c.Unlock()
 	r := ctx.Response()
+	if ctx.statusCode != 0 {
+		r.WriteHeader(int(ctx.statusCode))
+	}
 	r.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(r).Encode(data)
 }
@@ -133,17 +135,16 @@ func (ctx *Ctx) SendString(code StatusCode, s string) error {
 	// c.Lock()
 	// defer c.Unlock()
 	r := ctx.Response()
-	ctx.Status(code)
+	r.WriteHeader(int(code))
 	_, err := r.Write([]byte(s))
 	return err
 }
 
-func (ctx *Ctx) Status(code StatusCode) *Ctx {
-	// c.RLock()
-	// defer c.RUnlock()
+func (ctx *Ctx) SendStatus(code StatusCode) {
 	r := ctx.Response()
-	a, appExist := ctx.Values.Get("app")
 	r.WriteHeader(int(code))
+
+	a, appExist := ctx.Values.Get("app")
 	if appExist {
 		a := a.(*App)
 		a.handleError(code, ctx)
@@ -152,6 +153,12 @@ func (ctx *Ctx) Status(code StatusCode) *Ctx {
 		a.handleError(code, ctx)
 	}
 
+	r.Write([]byte{})
+}
+
+func (ctx *Ctx) Status(code StatusCode) *Ctx {
+	ctx.statusCode = code
+	// ... reste du code ...
 	return ctx
 }
 
